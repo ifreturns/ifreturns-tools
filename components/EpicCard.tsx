@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { GitLabEpic } from "@/types/gitlab";
+
+const SHOWN_PREFIXES = ["PRI::", "PRODUCT::", "TECH::", "TYP::"];
 
 interface Props {
   epic: GitLabEpic;
@@ -14,8 +17,87 @@ function formatDate(date: string | null): string | null {
   return new Date(date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+// Converts text to React nodes with clickable links (markdown + bare URLs)
+function linkify(text: string): React.ReactNode[] {
+  const regex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/\S+)/g;
+  const result: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) result.push(text.slice(last, match.index));
+    if (match[1] && match[2]) {
+      result.push(<a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{match[1]}</a>);
+    } else if (match[3]) {
+      result.push(<a key={match.index} href={match[3]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{match[3]}</a>);
+    }
+    last = regex.lastIndex;
+  }
+  if (last < text.length) result.push(text.slice(last));
+  return result;
+}
+
+function DescriptionModal({ epic, onClose }: { epic: GitLabEpic; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+          <div className="pr-4">
+            <p className="text-xs text-gray-400 font-mono mb-1">{epic.references.short}</p>
+            <h3 className="font-semibold text-gray-900 text-sm leading-snug">{epic.title}</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto p-5 text-sm text-gray-700 leading-relaxed">
+          {epic.description ? (
+            epic.description.split(/\n/).map((line, i) => (
+              <p key={i} className={line.trim() === "" ? "h-3" : "mb-1"}>
+                {linkify(line)}
+              </p>
+            ))
+          ) : (
+            <p className="text-gray-400 italic">Sin descripción</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
+          <a
+            href={epic.web_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Ver en GitLab →
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EpicCard({ epic, index, isHidden = false }: Props) {
-  const nonEpicLabels = epic.labels.filter((l) => !l.startsWith("EPIC::"));
+  const [showDesc, setShowDesc] = useState(false);
+
+  const visibleLabels = epic.labels.filter((l) =>
+    SHOWN_PREFIXES.some((p) => l.startsWith(p))
+  );
   const dueDate = formatDate(epic.due_date ?? epic.end_date);
   const isOverdue =
     (epic.due_date || epic.end_date) &&
@@ -38,7 +120,7 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
             ${snapshot.isDragging ? "shadow-lg rotate-1 opacity-90" : ""}
           `}
         >
-          {/* Epic reference + state */}
+          {/* Reference + state + description button */}
           <div className="flex items-center justify-between mb-1.5">
             <a
               href={epic.web_url}
@@ -49,15 +131,29 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
             >
               {epic.references.short}
             </a>
-            <span
-              className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                epic.state === "opened"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              {epic.state === "opened" ? "open" : "closed"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {epic.description && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowDesc(true); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  title="Ver descripción"
+                  className="text-gray-300 hover:text-blue-500 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              )}
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                  epic.state === "opened"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {epic.state === "opened" ? "open" : "closed"}
+              </span>
+            </div>
           </div>
 
           {/* Title */}
@@ -71,10 +167,10 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
             {epic.title}
           </a>
 
-          {/* Labels (non-EPIC::) */}
-          {nonEpicLabels.length > 0 && (
+          {/* Labels */}
+          {visibleLabels.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
-              {nonEpicLabels.map((label) => (
+              {visibleLabels.map((label) => (
                 <span
                   key={label}
                   className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100"
@@ -102,16 +198,15 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
               </span>
             </div>
             {dueDate && (
-              <span
-                className={`text-xs ${
-                  isOverdue ? "text-red-500 font-medium" : "text-gray-400"
-                }`}
-              >
+              <span className={`text-xs ${isOverdue ? "text-red-500 font-medium" : "text-gray-400"}`}>
                 {isOverdue ? "⚠ " : ""}
                 {dueDate}
               </span>
             )}
           </div>
+
+          {/* Description modal */}
+          {showDesc && <DescriptionModal epic={epic} onClose={() => setShowDesc(false)} />}
         </div>
       )}
     </Draggable>
