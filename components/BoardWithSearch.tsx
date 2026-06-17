@@ -7,6 +7,9 @@ import type { GitLabEpic, GitLabLabel } from "@/types/gitlab";
 
 type View = "board" | "swimlanes";
 
+// States shown by default in swimlane view
+const SWIMLANE_DEFAULT_VISIBLE = new Set(["ASSIGNED", "DEVELOPMENT", "FIX-REQUIRED"]);
+
 interface Props {
   initialEpics: GitLabEpic[];
   epicLabels: GitLabLabel[];
@@ -20,14 +23,22 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTechLabels, setSelectedTechLabels] = useState<string[]>([]);
 
-  // Per-tab hidden states (EPIC::) — empty = show all
+  const allEpicStateNames = useMemo(() => epicLabels.map((l) => l.name), [epicLabels]);
+
+  // Board: no hidden states by default
   const [boardHiddenStates, setBoardHiddenStates] = useState<Set<string>>(new Set());
-  const [swimlaneHiddenStates, setSwimlaneHiddenStates] = useState<Set<string>>(new Set());
+
+  // Swimlane: hide all states except the 3 defaults
+  const [swimlaneHiddenStates, setSwimlaneHiddenStates] = useState<Set<string>>(() =>
+    new Set(
+      epicLabels
+        .map((l) => l.name)
+        .filter((name) => !SWIMLANE_DEFAULT_VISIBLE.has(name.replace("EPIC::", "")))
+    )
+  );
+
   const [statesDropdownOpen, setStatesDropdownOpen] = useState(false);
   const statesDropdownRef = useRef<HTMLDivElement>(null);
-
-  const allEpicStateNames = useMemo(() => epicLabels.map((l) => l.name), [epicLabels]);
-  const currentHiddenStates = view === "board" ? boardHiddenStates : swimlaneHiddenStates;
 
   const techLabels = useMemo(() => {
     const all = new Set<string>();
@@ -36,6 +47,9 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
     );
     return [...all].sort();
   }, [initialEpics]);
+
+  const currentHiddenStates = view === "board" ? boardHiddenStates : swimlaneHiddenStates;
+  const hiddenCount = currentHiddenStates.size;
 
   const isFiltering =
     searchQuery.trim() !== "" ||
@@ -68,6 +82,16 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
     });
   }
 
+  function selectAllStates() {
+    const setter = view === "board" ? setBoardHiddenStates : setSwimlaneHiddenStates;
+    setter(new Set());
+  }
+
+  function deselectAllStates() {
+    const setter = view === "board" ? setBoardHiddenStates : setSwimlaneHiddenStates;
+    setter(new Set(allEpicStateNames));
+  }
+
   function clearFilters() {
     setSearchQuery("");
     setSelectedTechLabels([]);
@@ -75,12 +99,10 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
     else setSwimlaneHiddenStates(new Set());
   }
 
-  const hiddenCount = currentHiddenStates.size;
-
   return (
-    <div className="flex flex-col h-full gap-3">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+    <div className="flex flex-col h-full gap-2">
+      {/* Row 1: search + estados + limpiar + tab switcher */}
+      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
         {/* Search input */}
         <div className="relative">
           <svg
@@ -108,29 +130,6 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
           )}
         </div>
 
-        {/* TECH:: filter chips */}
-        {techLabels.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-gray-400 font-medium">TECH:</span>
-            {techLabels.map((label) => {
-              const active = selectedTechLabels.includes(label);
-              return (
-                <button
-                  key={label}
-                  onClick={() => toggleTechLabel(label)}
-                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                    active
-                      ? "bg-indigo-600 text-white border-indigo-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-indigo-400 hover:text-indigo-600"
-                  }`}
-                >
-                  {label.replace("TECH::", "")}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Estados dropdown */}
         {allEpicStateNames.length > 0 && (
           <div className="relative" ref={statesDropdownRef}>
@@ -157,7 +156,24 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
             </button>
 
             {statesDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[180px] py-1">
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[190px] py-1">
+                {/* Select / Deselect all */}
+                <div className="flex gap-1 px-3 py-1.5 border-b border-gray-100">
+                  <button
+                    onClick={selectAllStates}
+                    className="text-xs text-gray-500 hover:text-gray-800 underline"
+                  >
+                    Seleccionar todos
+                  </button>
+                  <span className="text-gray-300">·</span>
+                  <button
+                    onClick={deselectAllStates}
+                    className="text-xs text-gray-500 hover:text-gray-800 underline"
+                  >
+                    Deseleccionar todos
+                  </button>
+                </div>
+
                 {allEpicStateNames.map((state) => {
                   const hidden = currentHiddenStates.has(state);
                   return (
@@ -175,21 +191,6 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
                     </label>
                   );
                 })}
-                {hiddenCount > 0 && (
-                  <>
-                    <div className="border-t border-gray-100 my-1" />
-                    <button
-                      onClick={() => {
-                        if (view === "board") setBoardHiddenStates(new Set());
-                        else setSwimlaneHiddenStates(new Set());
-                        setStatesDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    >
-                      Mostrar todos
-                    </button>
-                  </>
-                )}
               </div>
             )}
           </div>
@@ -230,6 +231,29 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
           </button>
         </div>
       </div>
+
+      {/* Row 2: TECH chips (only if any exist) */}
+      {techLabels.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+          <span className="text-xs text-gray-400 font-medium">TECH:</span>
+          {techLabels.map((label) => {
+            const active = selectedTechLabels.includes(label);
+            return (
+              <button
+                key={label}
+                onClick={() => toggleTechLabel(label)}
+                className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                  active
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-indigo-400 hover:text-indigo-600"
+                }`}
+              >
+                {label.replace("TECH::", "")}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Active view */}
       {view === "board" ? (

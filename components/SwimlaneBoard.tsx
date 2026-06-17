@@ -92,20 +92,24 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
   }, [colOrder, allTechCols]);
 
   const epicRows = useMemo(() => {
-    const valid = new Set([...epicLabels.map((l) => l.name), UNASSIGNED_EPIC]);
+    // UNASSIGNED_EPIC is intentionally excluded — epics without state are not shown
+    const valid = new Set(epicLabels.map((l) => l.name));
     return rowOrder.filter((r) => valid.has(r) && !hiddenRowIds.has(r));
   }, [rowOrder, epicLabels, hiddenRowIds]);
 
-  // Workload count per tech column (only visible epics)
+  // Workload count per tech column — only epics in visible states
   const colWorkload = useMemo(() => {
+    const visibleStates = new Set(epicLabels.map((l) => l.name).filter((s) => !hiddenRowIds.has(s)));
     const counts: Record<string, number> = {};
     for (const epic of epics) {
       if (hiddenEpicIds.has(epic.iid)) continue;
+      const state = epic.labels.find((l) => l.startsWith("EPIC::"));
+      if (!state || !visibleStates.has(state)) continue;
       const tech = epic.labels.find((l) => l.startsWith("TECH::")) ?? UNASSIGNED_TECH;
       counts[tech] = (counts[tech] ?? 0) + 1;
     }
     return counts;
-  }, [epics, hiddenEpicIds]);
+  }, [epics, hiddenEpicIds, hiddenRowIds, epicLabels]);
 
   function moveRow(label: string, direction: "up" | "down") {
     setRowOrder((prev) => {
