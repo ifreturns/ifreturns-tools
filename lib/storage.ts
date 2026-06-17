@@ -4,14 +4,21 @@ import { join } from "path";
 const DATA_DIR = join(process.cwd(), ".board-data");
 
 function isKvConfigured(): boolean {
-  return !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
+  return (
+    (!!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN) ||
+    (!!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN)
+  );
 }
 
 export async function getConfig<T>(key: string, fallback: T): Promise<T> {
   if (isKvConfigured()) {
-    const { kv } = await import("@vercel/kv");
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({
+      url: (process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL)!,
+      token: (process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN)!,
+    });
     try {
-      const value = await kv.get<T>(`gitlab-board:${key}`);
+      const value = await redis.get<T>(`gitlab-board:${key}`);
       return value ?? fallback;
     } catch {
       return fallback;
@@ -30,9 +37,13 @@ export async function getConfig<T>(key: string, fallback: T): Promise<T> {
 
 export async function setConfig<T>(key: string, value: T): Promise<void> {
   if (isKvConfigured()) {
-    const { kv } = await import("@vercel/kv");
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({
+      url: (process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL)!,
+      token: (process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN)!,
+    });
     try {
-      await kv.set(`gitlab-board:${key}`, value);
+      await redis.set(`gitlab-board:${key}`, value);
     } catch {
       // ignore
     }
