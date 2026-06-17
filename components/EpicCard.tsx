@@ -6,6 +6,7 @@ import type { GitLabEpic } from "@/types/gitlab";
 interface Props {
   epic: GitLabEpic;
   index: number;
+  isHidden?: boolean;
 }
 
 function formatDate(date: string | null): string | null {
@@ -13,7 +14,7 @@ function formatDate(date: string | null): string | null {
   return new Date(date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export default function EpicCard({ epic, index }: Props) {
+export default function EpicCard({ epic, index, isHidden = false }: Props) {
   const nonEpicLabels = epic.labels.filter((l) => !l.startsWith("EPIC::"));
   const dueDate = formatDate(epic.due_date ?? epic.end_date);
   const isOverdue =
@@ -21,12 +22,16 @@ export default function EpicCard({ epic, index }: Props) {
     new Date(epic.due_date ?? epic.end_date ?? "") < new Date();
 
   return (
-    <Draggable draggableId={String(epic.iid)} index={index}>
+    <Draggable draggableId={String(epic.iid)} index={index} isDragDisabled={isHidden}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          style={{
+            ...provided.draggableProps.style,
+            ...(isHidden ? { height: 0, overflow: "hidden", padding: 0, margin: 0, border: 0 } : {}),
+          }}
           className={`
             bg-white rounded-lg border border-gray-200 p-3 shadow-sm
             hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing

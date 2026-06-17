@@ -37,7 +37,6 @@ function buildColumns(epics: GitLabEpic[], epicLabels: GitLabLabel[]): BoardColu
   return columns;
 }
 
-// Keep stored positions; append new column IDs at the end, drop removed ones
 function mergeOrder(stored: string[], current: string[]): string[] {
   const currentSet = new Set(current);
   const filtered = stored.filter((id) => currentSet.has(id));
@@ -66,9 +65,11 @@ async function persistColumnOrder(order: string[]): Promise<void> {
 interface Props {
   initialEpics: GitLabEpic[];
   epicLabels: GitLabLabel[];
+  searchQuery: string;
+  selectedTechLabels: string[];
 }
 
-export default function Board({ initialEpics, epicLabels }: Props) {
+export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,6 @@ export default function Board({ initialEpics, epicLabels }: Props) {
     baseColumns.map((c) => c.id)
   );
 
-  // Load shared order from KV on mount
   useEffect(() => {
     fetchColumnOrder().then((stored) => {
       if (stored.length > 0) {
@@ -94,13 +94,29 @@ export default function Board({ initialEpics, epicLabels }: Props) {
     return columnOrder.filter((id) => colMap.has(id)).map((id) => colMap.get(id)!);
   }, [baseColumns, columnOrder]);
 
+  // Compute hidden epic iids — never changes orderedColumns so DnD indices stay stable
+  const hiddenEpicIds = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    const hidden = new Set<number>();
+    if (!query && selectedTechLabels.length === 0) return hidden;
+    for (const col of orderedColumns) {
+      for (const epic of col.epics) {
+        const matchesSearch = !query || epic.title.toLowerCase().includes(query);
+        const matchesTech =
+          selectedTechLabels.length === 0 ||
+          selectedTechLabels.some((t) => epic.labels.includes(t));
+        if (!matchesSearch || !matchesTech) hidden.add(epic.iid);
+      }
+    }
+    return hidden;
+  }, [orderedColumns, searchQuery, selectedTechLabels]);
+
   const onDragEnd = useCallback(
     async (result: DropResult) => {
       const { destination, source, draggableId, type } = result;
       if (!destination) return;
       if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-      // Column reorder
       if (type === "COLUMN") {
         setColumnOrder((prev) => {
           const next = [...prev];
@@ -112,7 +128,6 @@ export default function Board({ initialEpics, epicLabels }: Props) {
         return;
       }
 
-      // Card move
       const epicIid = Number(draggableId);
       const epic = epics.find((e) => e.iid === epicIid);
       if (!epic) return;
@@ -147,19 +162,11 @@ export default function Board({ initialEpics, epicLabels }: Props) {
   );
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-4 px-1">
-        <span className="text-sm text-gray-500">
-          {epics.length} epic{epics.length !== 1 ? "s" : ""}
-        </span>
-        {saving !== null && (
-          <span className="text-xs text-blue-500 animate-pulse">Guardando...</span>
-        )}
-        {error && (
-          <span className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">
-            Error: {error}
-          </span>
-        )}
+    <div className="flex flex-col flex-1 overflow-hidden gap-1">
+      <div className="flex items-center gap-3 text-xs text-gray-400 px-1">
+        <span>{epics.length} epic{epics.length !== 1 ? "s" : ""}</span>
+        {saving !== null && <span className="text-blue-500 animate-pulse">Guardando...</span>}
+        {error && <span className="text-red-500 bg-red-50 px-2 py-0.5 rounded">Error: {error}</span>}
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
@@ -178,7 +185,11 @@ export default function Board({ initialEpics, epicLabels }: Props) {
                       {...provided.draggableProps}
                       className={snapshot.isDragging ? "opacity-90 rotate-1" : ""}
                     >
-                      <Column column={column} dragHandleProps={provided.dragHandleProps} />
+                      <Column
+                        column={column}
+                        dragHandleProps={provided.dragHandleProps}
+                        hiddenEpicIds={hiddenEpicIds}
+                      />
                     </div>
                   )}
                 </Draggable>

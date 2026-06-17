@@ -1,6 +1,7 @@
 import { Suspense } from "react";
+import { UserButton } from "@clerk/nextjs";
 import { getGroupEpics, getGroupLabels } from "@/lib/gitlab";
-import Board from "@/components/Board";
+import BoardWithSearch from "@/components/BoardWithSearch";
 import type { GitLabLabel } from "@/types/gitlab";
 
 async function BoardLoader() {
@@ -30,26 +31,27 @@ async function BoardLoader() {
     .filter((l) => l.name.startsWith("EPIC::"))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return <Board initialEpics={epics} epicLabels={epicLabels} />;
+  return <BoardWithSearch initialEpics={epics} epicLabels={epicLabels} />;
 }
 
 export default function Home() {
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <svg viewBox="0 0 25 24" className="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M24.507 9.5l-.034-.09L21.082.57a.748.748 0 00-1.418.019l-2.096 6.406H7.43L5.334.59a.748.748 0 00-1.418-.02L.484 9.411.45 9.5a5.29 5.29 0 001.762 6.106l.009.007.024.018 4.361 3.261 2.157 1.63 1.312.99a.872.872 0 001.03 0l1.312-.99 2.157-1.63 4.393-3.28.01-.007A5.29 5.29 0 0024.507 9.5z" fill="#E24329"/>
-          </svg>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-none">GitLab Epic Board</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Tablero Kanban de epics por estado</p>
+      <header className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <svg viewBox="0 0 25 24" className="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24.507 9.5l-.034-.09L21.082.57a.748.748 0 00-1.418.019l-2.096 6.406H7.43L5.334.59a.748.748 0 00-1.418-.02L.484 9.411.45 9.5a5.29 5.29 0 001.762 6.106l.009.007.024.018 4.361 3.261 2.157 1.63 1.312.99a.872.872 0 001.03 0l1.312-.99 2.157-1.63 4.393-3.28.01-.007A5.29 5.29 0 0024.507 9.5z" fill="#E24329"/>
+            </svg>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 leading-none">GitLab Epic Board</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Tablero Kanban de epics por estado</p>
+            </div>
           </div>
+          <UserButton />
         </div>
       </header>
 
-      {/* Board */}
       <main className="flex-1 overflow-hidden p-6">
         <Suspense fallback={<BoardSkeleton />}>
           <BoardLoader />

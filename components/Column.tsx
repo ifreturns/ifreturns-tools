@@ -8,6 +8,7 @@ import type { BoardColumn } from "@/types/gitlab";
 interface Props {
   column: BoardColumn;
   dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  hiddenEpicIds?: Set<number>;
 }
 
 function hexToRgb(hex: string): string {
@@ -18,8 +19,12 @@ function hexToRgb(hex: string): string {
   return `${r}, ${g}, ${b}`;
 }
 
-export default function Column({ column, dragHandleProps }: Props) {
+export default function Column({ column, dragHandleProps, hiddenEpicIds }: Props) {
   const rgb = hexToRgb(column.color || "#6366f1");
+  const visibleCount = hiddenEpicIds
+    ? column.epics.filter((e) => !hiddenEpicIds.has(e.iid)).length
+    : column.epics.length;
+  const allHidden = column.epics.length > 0 && visibleCount === 0;
 
   return (
     <div className="flex flex-col w-72 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200">
@@ -40,7 +45,7 @@ export default function Column({ column, dragHandleProps }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs bg-white text-gray-500 font-medium px-2 py-0.5 rounded-full border border-gray-200">
-            {column.epics.length}
+            {visibleCount}{hiddenEpicIds && visibleCount !== column.epics.length ? ` / ${column.epics.length}` : ""}
           </span>
           {/* Drag hint icon */}
           <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -60,12 +65,17 @@ export default function Column({ column, dragHandleProps }: Props) {
             }`}
           >
             {column.epics.map((epic, index) => (
-              <EpicCard key={epic.iid} epic={epic} index={index} />
+              <EpicCard
+                key={epic.iid}
+                epic={epic}
+                index={index}
+                isHidden={hiddenEpicIds?.has(epic.iid) ?? false}
+              />
             ))}
             {provided.placeholder}
-            {column.epics.length === 0 && !snapshot.isDraggingOver && (
+            {(column.epics.length === 0 || allHidden) && !snapshot.isDraggingOver && (
               <div className="flex items-center justify-center h-20 text-xs text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">
-                Sin epics
+                {allHidden ? "Sin resultados" : "Sin epics"}
               </div>
             )}
           </div>
