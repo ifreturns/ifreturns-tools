@@ -2,7 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Board from "./Board";
+import SwimlaneBoard from "./SwimlaneBoard";
 import type { GitLabEpic, GitLabLabel } from "@/types/gitlab";
+
+type View = "board" | "swimlanes";
 
 interface Props {
   initialEpics: GitLabEpic[];
@@ -10,6 +13,7 @@ interface Props {
 }
 
 export default function BoardWithSearch({ initialEpics, epicLabels }: Props) {
+  const [view, setView] = useState<View>("board");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTechLabels, setSelectedTechLabels] = useState<string[]>([]);
 
@@ -31,8 +35,9 @@ export default function BoardWithSearch({ initialEpics, epicLabels }: Props) {
 
   return (
     <div className="flex flex-col h-full gap-3">
-      {/* Search bar — completely outside DragDropContext */}
+      {/* Toolbar: search + tabs */}
       <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+        {/* Search input */}
         <div className="relative">
           <svg
             className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
@@ -61,6 +66,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels }: Props) {
           )}
         </div>
 
+        {/* TECH:: filter chips */}
         {techLabels.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs text-gray-400 font-medium">TECH:</span>
@@ -91,15 +97,54 @@ export default function BoardWithSearch({ initialEpics, epicLabels }: Props) {
             Limpiar filtros
           </button>
         )}
+
+        {/* Tab switcher */}
+        <div className="ml-auto flex items-center bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+          <button
+            onClick={() => setView("board")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+              view === "board"
+                ? "bg-gray-900 text-white"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Tablero
+          </button>
+          <button
+            onClick={() => setView("swimlanes")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+              view === "swimlanes"
+                ? "bg-gray-900 text-white"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+            Swimlanes
+          </button>
+        </div>
       </div>
 
-      {/* Board handles DnD only */}
-      <Board
-        initialEpics={initialEpics}
-        epicLabels={epicLabels}
-        searchQuery={searchQuery}
-        selectedTechLabels={selectedTechLabels}
-      />
+      {/* Active view */}
+      {view === "board" ? (
+        <Board
+          initialEpics={initialEpics}
+          epicLabels={epicLabels}
+          searchQuery={searchQuery}
+          selectedTechLabels={selectedTechLabels}
+        />
+      ) : (
+        <SwimlaneBoard
+          initialEpics={initialEpics}
+          epicLabels={epicLabels}
+          searchQuery={searchQuery}
+          selectedTechLabels={selectedTechLabels}
+        />
+      )}
     </div>
   );
 }

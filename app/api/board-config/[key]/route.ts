@@ -1,24 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getConfig, setConfig } from "@/lib/storage";
 
-const KEY = "column-order";
-
-export async function GET() {
+export async function GET(
+  _: NextRequest,
+  { params }: { params: Promise<{ key: string }> }
+) {
+  const { key } = await params;
   try {
-    const order = await getConfig<string[]>(KEY, []);
-    return NextResponse.json(order);
+    const value = await getConfig<string[]>(key, []);
+    return NextResponse.json(value);
   } catch {
     return NextResponse.json([]);
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ key: string }> }
+) {
+  const { key } = await params;
   try {
     const body = await request.json();
     if (!Array.isArray(body.order)) {
       return NextResponse.json({ error: "order must be an array" }, { status: 400 });
     }
-    await setConfig(KEY, body.order);
+    await setConfig(key, body.order);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
