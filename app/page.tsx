@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { getGroupEpics, getGroupLabels } from "@/lib/gitlab";
+import { getGroupEpics, getGroupLabels, getGroupClosedEpics } from "@/lib/gitlab";
 import { getConfig } from "@/lib/storage";
 import BoardWithSearch from "@/components/BoardWithSearch";
 import type { GitLabLabel } from "@/types/gitlab";
@@ -25,9 +25,10 @@ async function BoardLoader() {
     );
   }
 
-  const [epics, allLabels, columnOrder, swimlaneColOrder] = await Promise.all([
+  const [epics, allLabels, closedEpics, columnOrder, swimlaneColOrder] = await Promise.all([
     getGroupEpics(groupId),
     getGroupLabels(groupId),
+    getGroupClosedEpics(groupId),
     getConfig<string[]>("column-order", []),
     getConfig<string[]>("swimlane-col-order", []),
   ]);
@@ -43,6 +44,7 @@ async function BoardLoader() {
       initialColumnOrder={columnOrder}
       initialSwimlaneColOrder={swimlaneColOrder}
       initialSwimlaneRowOrder={columnOrder}
+      closedEpics={closedEpics}
     />
   );
 }

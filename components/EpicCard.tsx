@@ -92,6 +92,65 @@ function DescriptionModal({ epic, onClose }: { epic: GitLabEpic; onClose: () => 
   );
 }
 
+export function StaticEpicCard({ epic }: { epic: GitLabEpic }) {
+  const [showDesc, setShowDesc] = useState(false);
+  const visibleLabels = epic.labels.filter((l) => SHOWN_PREFIXES.some((p) => l.startsWith(p)));
+  const dueDate = formatDate(epic.due_date ?? epic.end_date);
+  const isOverdue =
+    (epic.due_date || epic.end_date) &&
+    new Date(epic.due_date ?? epic.end_date ?? "") < new Date();
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+      <div className="flex items-center justify-between mb-1.5">
+        <a href={epic.web_url} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-gray-400 hover:text-blue-500 font-mono">
+          {epic.references.short}
+        </a>
+        <div className="flex items-center gap-1.5">
+          {epic.description && (
+            <button onClick={() => setShowDesc(true)} title="Ver descripción"
+              className="text-gray-300 hover:text-blue-500 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          )}
+          <span className="text-xs px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">closed</span>
+        </div>
+      </div>
+      <a href={epic.web_url} target="_blank" rel="noopener noreferrer"
+        className="block text-sm font-medium text-gray-800 hover:text-blue-600 leading-snug mb-2">
+        {epic.title}
+      </a>
+      {visibleLabels.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {visibleLabels.map((label) => (
+            <span key={label} className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100">
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center justify-between mt-1">
+        <div className="flex items-center gap-1.5">
+          {epic.author.avatar_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={epic.author.avatar_url} alt={epic.author.name} title={epic.author.name} className="w-5 h-5 rounded-full" />
+          )}
+          <span className="text-xs text-gray-400 truncate max-w-[100px]">{epic.author.username}</span>
+        </div>
+        {dueDate && (
+          <span className={`text-xs ${isOverdue ? "text-red-500 font-medium" : "text-gray-400"}`}>
+            {isOverdue ? "⚠ " : ""}{dueDate}
+          </span>
+        )}
+      </div>
+      {showDesc && <DescriptionModal epic={epic} onClose={() => setShowDesc(false)} />}
+    </div>
+  );
+}
+
 export default function EpicCard({ epic, index, isHidden = false }: Props) {
   const [showDesc, setShowDesc] = useState(false);
 

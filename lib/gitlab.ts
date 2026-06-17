@@ -52,6 +52,21 @@ export async function getGroupEpics(groupId: string): Promise<GitLabEpic[]> {
   );
 }
 
+export async function getGroupClosedEpics(groupId: string): Promise<GitLabEpic[]> {
+  const since = new Date();
+  since.setMonth(since.getMonth() - 1);
+  const params = new URLSearchParams({
+    state: "closed",
+    include_descendant_groups: "true",
+    updated_after: since.toISOString(),
+  });
+  const epics = await paginatedFetch<GitLabEpic>(
+    `${GITLAB_BASE_URL}/groups/${encodeURIComponent(groupId)}/epics`,
+    params
+  );
+  return epics.filter((e) => e.closed_at && new Date(e.closed_at) >= since);
+}
+
 export async function updateEpicLabels(
   groupId: string,
   epicIid: number,

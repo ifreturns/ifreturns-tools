@@ -3,15 +3,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import Column from "./Column";
+import { StaticEpicCard } from "./EpicCard";
 import type { BoardColumn, GitLabEpic, GitLabLabel } from "@/types/gitlab";
-
-const UNASSIGNED_COLUMN_ID = "__unassigned__";
-
-const UNASSIGNED_COLUMN: Omit<BoardColumn, "epics"> = {
-  id: UNASSIGNED_COLUMN_ID,
-  label: "Sin estado",
-  color: "#9ca3af",
-};
 
 function buildColumns(epics: GitLabEpic[], epicLabels: GitLabLabel[]): BoardColumn[] {
   const labelColumns: BoardColumn[] = epicLabels.map((label) => ({
@@ -21,20 +14,16 @@ function buildColumns(epics: GitLabEpic[], epicLabels: GitLabLabel[]): BoardColu
     epics: [],
   }));
 
-  const unassigned: BoardColumn = { ...UNASSIGNED_COLUMN, epics: [] };
-
   for (const epic of epics) {
     const epicStatusLabel = epic.labels.find((l) => l.startsWith("EPIC::"));
     if (epicStatusLabel) {
       const col = labelColumns.find((c) => c.label === epicStatusLabel);
-      if (col) { col.epics.push(epic); continue; }
+      if (col) col.epics.push(epic);
     }
-    unassigned.epics.push(epic);
+    // epics without state are silently ignored
   }
 
-  const columns = labelColumns.filter((c) => c.epics.length > 0 || epicLabels.length > 0);
-  if (unassigned.epics.length > 0) columns.push(unassigned);
-  return columns;
+  return labelColumns.filter((c) => c.epics.length > 0 || epicLabels.length > 0);
 }
 
 function mergeOrder(stored: string[], current: string[]): string[] {
@@ -57,13 +46,14 @@ async function persistColumnOrder(order: string[]): Promise<void> {
 interface Props {
   initialEpics: GitLabEpic[];
   epicLabels: GitLabLabel[];
+  closedEpics: GitLabEpic[];
   searchQuery: string;
   selectedTechLabels: string[];
   initialColumnOrder: string[];
   hiddenStateIds: Set<string>;
 }
 
-export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColumnOrder, hiddenStateIds }: Props) {
+export default function Board({ initialEpics, epicLabels, closedEpics, searchQuery, selectedTechLabels, initialColumnOrder, hiddenStateIds }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -119,9 +109,8 @@ export default function Board({ initialEpics, epicLabels, searchQuery, selectedT
       if (!epic) return;
 
       const targetColumnId = destination.droppableId;
-      const isUnassigned = targetColumnId === UNASSIGNED_COLUMN_ID;
       const otherLabels = epic.labels.filter((l) => !l.startsWith("EPIC::"));
-      const newLabels = isUnassigned ? otherLabels : [...otherLabels, targetColumnId];
+      const newLabels = [...otherLabels, targetColumnId];
 
       setEpics((prev) => prev.map((e) => (e.iid === epicIid ? { ...e, labels: newLabels } : e)));
       setError(null);
@@ -193,6 +182,29 @@ export default function Board({ initialEpics, epicLabels, searchQuery, selectedT
                 );
               })}
               {provided.placeholder}
+
+              {/* Closed last 30 days — static, non-draggable */}
+              {closedEpics.length > 0 && (
+                <div className="w-72 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200 p-3 select-none opacity-80">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                      <span className="font-semibold text-sm text-gray-600">Cerradas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {closedEpics.length}
+                      </span>
+                      <span className="text-xs text-gray-300">último mes</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {closedEpics.map((epic) => (
+                      <StaticEpicCard key={epic.iid} epic={epic} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </Droppable>

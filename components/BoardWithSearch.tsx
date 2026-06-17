@@ -13,12 +13,13 @@ const SWIMLANE_DEFAULT_VISIBLE = new Set(["ASSIGNED", "DEVELOPMENT", "FIX-REQUIR
 interface Props {
   initialEpics: GitLabEpic[];
   epicLabels: GitLabLabel[];
+  closedEpics: GitLabEpic[];
   initialColumnOrder: string[];
   initialSwimlaneColOrder: string[];
   initialSwimlaneRowOrder: string[];
 }
 
-export default function BoardWithSearch({ initialEpics, epicLabels, initialColumnOrder, initialSwimlaneColOrder, initialSwimlaneRowOrder }: Props) {
+export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics, initialColumnOrder, initialSwimlaneColOrder, initialSwimlaneRowOrder }: Props) {
   const [view, setView] = useState<View>("board");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTechLabels, setSelectedTechLabels] = useState<string[]>([]);
@@ -260,6 +261,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
         <Board
           initialEpics={initialEpics}
           epicLabels={epicLabels}
+          closedEpics={closedEpics}
           searchQuery={searchQuery}
           selectedTechLabels={selectedTechLabels}
           initialColumnOrder={initialColumnOrder}
