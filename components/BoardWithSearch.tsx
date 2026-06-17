@@ -20,6 +20,13 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTechLabels, setSelectedTechLabels] = useState<string[]>([]);
 
+  // Per-tab state (EPIC::) visibility — selected = shown, empty = show all
+  const [boardSelectedStates, setBoardSelectedStates] = useState<string[]>([]);
+  const [swimlaneSelectedStates, setSwimlaneSelectedStates] = useState<string[]>([]);
+
+  const allEpicStateNames = useMemo(() => epicLabels.map((l) => l.name), [epicLabels]);
+  const currentSelectedStates = view === "board" ? boardSelectedStates : swimlaneSelectedStates;
+
   const techLabels = useMemo(() => {
     const all = new Set<string>();
     initialEpics.forEach((e) =>
@@ -28,12 +35,40 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
     return [...all].sort();
   }, [initialEpics]);
 
-  const isFiltering = searchQuery.trim() !== "" || selectedTechLabels.length > 0;
+  // Compute hidden state IDs (states NOT in the selected set)
+  const boardHiddenStateIds = useMemo(() => {
+    if (boardSelectedStates.length === 0) return new Set<string>();
+    return new Set(allEpicStateNames.filter((s) => !boardSelectedStates.includes(s)));
+  }, [boardSelectedStates, allEpicStateNames]);
+
+  const swimlaneHiddenStateIds = useMemo(() => {
+    if (swimlaneSelectedStates.length === 0) return new Set<string>();
+    return new Set(allEpicStateNames.filter((s) => !swimlaneSelectedStates.includes(s)));
+  }, [swimlaneSelectedStates, allEpicStateNames]);
+
+  const isFiltering =
+    searchQuery.trim() !== "" ||
+    selectedTechLabels.length > 0 ||
+    currentSelectedStates.length > 0;
 
   function toggleTechLabel(label: string) {
     setSelectedTechLabels((prev) =>
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
     );
+  }
+
+  function toggleState(state: string) {
+    const setter = view === "board" ? setBoardSelectedStates : setSwimlaneSelectedStates;
+    setter((prev) =>
+      prev.includes(state) ? prev.filter((s) => s !== state) : [...prev, state]
+    );
+  }
+
+  function clearFilters() {
+    setSearchQuery("");
+    setSelectedTechLabels([]);
+    if (view === "board") setBoardSelectedStates([]);
+    else setSwimlaneSelectedStates([]);
   }
 
   return (
@@ -92,9 +127,32 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
           </div>
         )}
 
+        {/* EPIC:: state filter chips — per tab */}
+        {allEpicStateNames.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-gray-400 font-medium">Estado:</span>
+            {allEpicStateNames.map((state) => {
+              const active = currentSelectedStates.includes(state);
+              return (
+                <button
+                  key={state}
+                  onClick={() => toggleState(state)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                    active
+                      ? "bg-purple-600 text-white border-purple-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-purple-400 hover:text-purple-600"
+                  }`}
+                >
+                  {state.replace("EPIC::", "")}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {isFiltering && (
           <button
-            onClick={() => { setSearchQuery(""); setSelectedTechLabels([]); }}
+            onClick={clearFilters}
             className="text-xs text-gray-400 hover:text-gray-600 underline"
           >
             Limpiar filtros
@@ -140,6 +198,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
           searchQuery={searchQuery}
           selectedTechLabels={selectedTechLabels}
           initialColumnOrder={initialColumnOrder}
+          hiddenStateIds={boardHiddenStateIds}
         />
       ) : (
         <SwimlaneBoard
@@ -149,6 +208,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, initialColum
           selectedTechLabels={selectedTechLabels}
           initialColOrder={initialSwimlaneColOrder}
           initialRowOrder={initialSwimlaneRowOrder}
+          hiddenRowIds={swimlaneHiddenStateIds}
         />
       )}
     </div>

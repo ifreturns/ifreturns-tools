@@ -35,9 +35,10 @@ interface Props {
   selectedTechLabels: string[];
   initialColOrder: string[];
   initialRowOrder: string[];
+  hiddenRowIds: Set<string>;
 }
 
-export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColOrder, initialRowOrder }: Props) {
+export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColOrder, initialRowOrder, hiddenRowIds }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
 
   // Unique TECH:: labels derived from epics
@@ -92,8 +93,8 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
 
   const epicRows = useMemo(() => {
     const valid = new Set([...epicLabels.map((l) => l.name), UNASSIGNED_EPIC]);
-    return rowOrder.filter((r) => valid.has(r));
-  }, [rowOrder, epicLabels]);
+    return rowOrder.filter((r) => valid.has(r) && !hiddenRowIds.has(r));
+  }, [rowOrder, epicLabels, hiddenRowIds]);
 
   // Workload count per tech column (only visible epics)
   const colWorkload = useMemo(() => {

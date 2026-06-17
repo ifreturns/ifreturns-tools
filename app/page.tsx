@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { getGroupEpics, getGroupLabels } from "@/lib/gitlab";

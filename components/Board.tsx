@@ -60,9 +60,10 @@ interface Props {
   searchQuery: string;
   selectedTechLabels: string[];
   initialColumnOrder: string[];
+  hiddenStateIds: Set<string>;
 }
 
-export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColumnOrder }: Props) {
+export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColumnOrder, hiddenStateIds }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -162,23 +163,35 @@ export default function Board({ initialEpics, epicLabels, searchQuery, selectedT
               {...provided.droppableProps}
               className="flex gap-4 overflow-x-auto pb-4 flex-1 items-start"
             >
-              {orderedColumns.map((column, index) => (
-                <Draggable key={column.id} draggableId={`col::${column.id}`} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={snapshot.isDragging ? "opacity-90 rotate-1" : ""}
-                    >
-                      <Column
-                        column={column}
-                        dragHandleProps={provided.dragHandleProps}
-                        hiddenEpicIds={hiddenEpicIds}
-                      />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+              {orderedColumns.map((column, index) => {
+                const isColHidden = hiddenStateIds.has(column.id);
+                return (
+                  <Draggable
+                    key={column.id}
+                    draggableId={`col::${column.id}`}
+                    index={index}
+                    isDragDisabled={isColHidden}
+                  >
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        style={{
+                          ...provided.draggableProps.style,
+                          ...(isColHidden ? { width: 0, minWidth: 0, overflow: "hidden", padding: 0, margin: 0 } : {}),
+                        }}
+                        className={snapshot.isDragging ? "opacity-90 rotate-1" : ""}
+                      >
+                        <Column
+                          column={column}
+                          dragHandleProps={provided.dragHandleProps}
+                          hiddenEpicIds={hiddenEpicIds}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
             </div>
           )}
