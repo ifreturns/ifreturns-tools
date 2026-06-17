@@ -25,12 +25,11 @@ async function BoardLoader() {
     );
   }
 
-  const [epics, allLabels, columnOrder, swimlaneColOrder, swimlaneRowOrder] = await Promise.all([
+  const [epics, allLabels, columnOrder, swimlaneColOrder] = await Promise.all([
     getGroupEpics(groupId),
     getGroupLabels(groupId),
     getConfig<string[]>("column-order", []),
     getConfig<string[]>("swimlane-col-order", []),
-    getConfig<string[]>("swimlane-row-order", []),
   ]);
 
   const epicLabels: GitLabLabel[] = allLabels
@@ -43,7 +42,7 @@ async function BoardLoader() {
       epicLabels={epicLabels}
       initialColumnOrder={columnOrder}
       initialSwimlaneColOrder={swimlaneColOrder}
-      initialSwimlaneRowOrder={swimlaneRowOrder}
+      initialSwimlaneRowOrder={columnOrder}
     />
   );
 }

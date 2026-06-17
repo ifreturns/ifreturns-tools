@@ -114,7 +114,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
       if (idx === -1 || newIdx < 0 || newIdx >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
-      persistOrder("swimlane-row-order", next);
+      persistOrder("column-order", next);
       return next;
     });
   }
