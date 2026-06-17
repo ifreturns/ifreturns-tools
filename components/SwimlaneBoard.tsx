@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import EpicCard from "./EpicCard";
 import type { GitLabEpic, GitLabLabel } from "@/types/gitlab";
@@ -18,14 +18,6 @@ function mergeOrder(stored: string[], current: string[]): string[] {
   return [...filtered, ...newIds];
 }
 
-async function fetchOrder(key: string): Promise<string[]> {
-  try {
-    const res = await fetch(`/api/board-config/${key}`);
-    if (!res.ok) return [];
-    return res.json();
-  } catch { return []; }
-}
-
 async function persistOrder(key: string, order: string[]): Promise<void> {
   try {
     await fetch(`/api/board-config/${key}`, {
@@ -41,14 +33,12 @@ interface Props {
   epicLabels: GitLabLabel[];
   searchQuery: string;
   selectedTechLabels: string[];
+  initialColOrder: string[];
+  initialRowOrder: string[];
 }
 
-export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, selectedTechLabels }: Props) {
+export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColOrder, initialRowOrder }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
-  const [colOrder, setColOrder] = useState<string[]>([]);
-  const [rowOrder, setRowOrder] = useState<string[]>([]);
-  const [saving, setSaving] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Unique TECH:: labels derived from epics
   const allTechCols = useMemo(() => {
@@ -57,18 +47,14 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
     return [...all].sort();
   }, [epics]);
 
-  // Load persisted orders from KV
-  useEffect(() => {
-    const defaultCols = [...allTechCols, UNASSIGNED_TECH];
-    const defaultRows = [...epicLabels.map((l) => l.name), UNASSIGNED_EPIC];
-    Promise.all([fetchOrder("swimlane-col-order"), fetchOrder("swimlane-row-order")]).then(
-      ([cols, rows]) => {
-        setColOrder(cols.length > 0 ? mergeOrder(cols, defaultCols) : defaultCols);
-        setRowOrder(rows.length > 0 ? mergeOrder(rows, defaultRows) : defaultRows);
-      }
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [colOrder, setColOrder] = useState<string[]>(() =>
+    initialColOrder.length > 0 ? mergeOrder(initialColOrder, [...allTechCols, UNASSIGNED_TECH]) : [...allTechCols, UNASSIGNED_TECH]
+  );
+  const [rowOrder, setRowOrder] = useState<string[]>(() =>
+    initialRowOrder.length > 0 ? mergeOrder(initialRowOrder, [...epicLabels.map((l) => l.name), UNASSIGNED_EPIC]) : [...epicLabels.map((l) => l.name), UNASSIGNED_EPIC]
+  );
+  const [saving, setSaving] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Epics grouped by cell key: "TECH:::EPIC::"
   const cellData = useMemo(() => {

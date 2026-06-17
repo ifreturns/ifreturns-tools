@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { getGroupEpics, getGroupLabels } from "@/lib/gitlab";
+import { getConfig } from "@/lib/storage";
 import BoardWithSearch from "@/components/BoardWithSearch";
 import type { GitLabLabel } from "@/types/gitlab";
 
@@ -22,16 +23,27 @@ async function BoardLoader() {
     );
   }
 
-  const [epics, allLabels] = await Promise.all([
+  const [epics, allLabels, columnOrder, swimlaneColOrder, swimlaneRowOrder] = await Promise.all([
     getGroupEpics(groupId),
     getGroupLabels(groupId),
+    getConfig<string[]>("column-order", []),
+    getConfig<string[]>("swimlane-col-order", []),
+    getConfig<string[]>("swimlane-row-order", []),
   ]);
 
   const epicLabels: GitLabLabel[] = allLabels
     .filter((l) => l.name.startsWith("EPIC::"))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return <BoardWithSearch initialEpics={epics} epicLabels={epicLabels} />;
+  return (
+    <BoardWithSearch
+      initialEpics={epics}
+      epicLabels={epicLabels}
+      initialColumnOrder={columnOrder}
+      initialSwimlaneColOrder={swimlaneColOrder}
+      initialSwimlaneRowOrder={swimlaneRowOrder}
+    />
+  );
 }
 
 export default function Home() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import Column from "./Column";
 import type { BoardColumn, GitLabEpic, GitLabLabel } from "@/types/gitlab";
@@ -44,14 +44,6 @@ function mergeOrder(stored: string[], current: string[]): string[] {
   return [...filtered, ...newIds];
 }
 
-async function fetchColumnOrder(): Promise<string[]> {
-  try {
-    const res = await fetch("/api/column-order");
-    if (!res.ok) return [];
-    return res.json();
-  } catch { return []; }
-}
-
 async function persistColumnOrder(order: string[]): Promise<void> {
   try {
     await fetch("/api/column-order", {
@@ -67,27 +59,20 @@ interface Props {
   epicLabels: GitLabLabel[];
   searchQuery: string;
   selectedTechLabels: string[];
+  initialColumnOrder: string[];
 }
 
-export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels }: Props) {
+export default function Board({ initialEpics, epicLabels, searchQuery, selectedTechLabels, initialColumnOrder }: Props) {
   const [epics, setEpics] = useState<GitLabEpic[]>(initialEpics);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const baseColumns = useMemo(() => buildColumns(epics, epicLabels), [epics, epicLabels]);
 
-  const [columnOrder, setColumnOrder] = useState<string[]>(() =>
-    baseColumns.map((c) => c.id)
-  );
-
-  useEffect(() => {
-    fetchColumnOrder().then((stored) => {
-      if (stored.length > 0) {
-        setColumnOrder(mergeOrder(stored, baseColumns.map((c) => c.id)));
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    const defaults = baseColumns.map((c) => c.id);
+    return initialColumnOrder.length > 0 ? mergeOrder(initialColumnOrder, defaults) : defaults;
+  });
 
   const orderedColumns = useMemo(() => {
     const colMap = new Map(baseColumns.map((c) => [c.id, c]));
