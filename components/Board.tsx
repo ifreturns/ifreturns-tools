@@ -183,28 +183,41 @@ export default function Board({ initialEpics, epicLabels, closedEpics, searchQue
               })}
               {provided.placeholder}
 
-              {/* Closed last 30 days — static, non-draggable */}
-              {closedEpics.length > 0 && (
-                <div className="w-72 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200 p-3 select-none opacity-80">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
-                      <span className="font-semibold text-sm text-gray-600">Cerradas</span>
+              {/* CLOSED — last 30 days, filtered by search */}
+              {closedEpics.length > 0 && (() => {
+                const query = searchQuery.toLowerCase().trim();
+                const visible = closedEpics.filter((e) => {
+                  const matchesSearch = !query || e.title.toLowerCase().includes(query);
+                  const matchesTech =
+                    selectedTechLabels.length === 0 ||
+                    selectedTechLabels.some((t) => e.labels.includes(t));
+                  return matchesSearch && matchesTech;
+                });
+                return (
+                  <div className="w-72 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200 p-3 select-none opacity-80">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                        <span className="font-semibold text-sm text-gray-500 tracking-wide">CLOSED</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {visible.length}
+                        </span>
+                        <span className="text-xs text-gray-300">último mes</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {closedEpics.length}
-                      </span>
-                      <span className="text-xs text-gray-300">último mes</span>
+                    <div className="flex flex-col gap-2">
+                      {visible.map((epic) => (
+                        <StaticEpicCard key={epic.iid} epic={epic} />
+                      ))}
+                      {visible.length === 0 && (
+                        <p className="text-xs text-gray-400 text-center py-4">Sin resultados</p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    {closedEpics.map((epic) => (
-                      <StaticEpicCard key={epic.iid} epic={epic} />
-                    ))}
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </Droppable>

@@ -110,13 +110,12 @@ export function StaticEpicCard({ epic }: { epic: GitLabEpic }) {
         <div className="flex items-center gap-1.5">
           {epic.description && (
             <button onClick={() => setShowDesc(true)} title="Ver descripción"
-              className="text-gray-300 hover:text-blue-500 transition-colors">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              className="text-blue-400 hover:text-blue-600 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
           )}
-          <span className="text-xs px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">closed</span>
         </div>
       </div>
       <a href={epic.web_url} target="_blank" rel="noopener noreferrer"
@@ -196,22 +195,13 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
                   onClick={(e) => { e.stopPropagation(); setShowDesc(true); }}
                   onMouseDown={(e) => e.stopPropagation()}
                   title="Ver descripción"
-                  className="text-gray-300 hover:text-blue-500 transition-colors"
+                  className="text-blue-400 hover:text-blue-600 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
               )}
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                  epic.state === "opened"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                {epic.state === "opened" ? "open" : "closed"}
-              </span>
             </div>
           </div>
 
