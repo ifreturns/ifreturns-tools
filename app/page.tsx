@@ -1,65 +1,79 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { getGroupEpics, getGroupLabels } from "@/lib/gitlab";
+import Board from "@/components/Board";
+import type { GitLabLabel } from "@/types/gitlab";
+
+async function BoardLoader() {
+  const groupId = process.env.GITLAB_GROUP_ID;
+
+  if (!groupId || !process.env.GITLAB_TOKEN) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 max-w-md text-center">
+          <p className="text-amber-800 font-medium mb-2">Configuración requerida</p>
+          <p className="text-amber-700 text-sm">
+            Crea un archivo <code className="bg-amber-100 px-1 rounded">.env.local</code> con{" "}
+            <code className="bg-amber-100 px-1 rounded">GITLAB_TOKEN</code> y{" "}
+            <code className="bg-amber-100 px-1 rounded">GITLAB_GROUP_ID</code>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const [epics, allLabels] = await Promise.all([
+    getGroupEpics(groupId),
+    getGroupLabels(groupId),
+  ]);
+
+  const epicLabels: GitLabLabel[] = allLabels
+    .filter((l) => l.name.startsWith("EPIC::"))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return <Board initialEpics={epics} epicLabels={epicLabels} />;
+}
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <svg viewBox="0 0 25 24" className="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24.507 9.5l-.034-.09L21.082.57a.748.748 0 00-1.418.019l-2.096 6.406H7.43L5.334.59a.748.748 0 00-1.418-.02L.484 9.411.45 9.5a5.29 5.29 0 001.762 6.106l.009.007.024.018 4.361 3.261 2.157 1.63 1.312.99a.872.872 0 001.03 0l1.312-.99 2.157-1.63 4.393-3.28.01-.007A5.29 5.29 0 0024.507 9.5z" fill="#E24329"/>
+          </svg>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 leading-none">GitLab Epic Board</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Tablero Kanban de epics por estado</p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      {/* Board */}
+      <main className="flex-1 overflow-hidden p-6">
+        <Suspense fallback={<BoardSkeleton />}>
+          <BoardLoader />
+        </Suspense>
       </main>
+    </div>
+  );
+}
+
+function BoardSkeleton() {
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="w-72 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200 p-3 animate-pulse">
+          <div className="h-5 bg-gray-200 rounded w-32 mb-3" />
+          {[1, 2].map((j) => (
+            <div key={j} className="bg-white rounded-lg border border-gray-200 p-3 mb-2">
+              <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-full mb-1" />
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
