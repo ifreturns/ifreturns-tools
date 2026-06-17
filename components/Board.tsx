@@ -124,11 +124,11 @@ export default function Board({ initialEpics, epicLabels, closedEpics, searchQue
         });
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error ?? "Error al actualizar");
+          throw new Error(data.error ?? "Failed to update");
         }
       } catch (err) {
         setEpics((prev) => prev.map((e) => (e.iid === epicIid ? epic : e)));
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setSaving(null);
       }
@@ -140,7 +140,7 @@ export default function Board({ initialEpics, epicLabels, closedEpics, searchQue
     <div className="flex flex-col flex-1 overflow-hidden gap-1">
       <div className="flex items-center gap-3 text-xs text-gray-400 px-1">
         <span>{epics.length} epic{epics.length !== 1 ? "s" : ""}</span>
-        {saving !== null && <span className="text-blue-500 animate-pulse">Guardando...</span>}
+        {saving !== null && <span className="text-blue-500 animate-pulse">Saving...</span>}
         {error && <span className="text-red-500 bg-red-50 px-2 py-0.5 rounded">Error: {error}</span>}
       </div>
 
@@ -204,7 +204,7 @@ export default function Board({ initialEpics, epicLabels, closedEpics, searchQue
                         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                           {visible.length}
                         </span>
-                        <span className="text-xs text-gray-300">último mes</span>
+                        <span className="text-xs text-gray-300">last month</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -212,7 +212,7 @@ export default function Board({ initialEpics, epicLabels, closedEpics, searchQue
                         <StaticEpicCard key={epic.iid} epic={epic} />
                       ))}
                       {visible.length === 0 && (
-                        <p className="text-xs text-gray-400 text-center py-4">Sin resultados</p>
+                        <p className="text-xs text-gray-400 text-center py-4">No results</p>
                       )}
                     </div>
                   </div>

@@ -114,7 +114,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics,
           </svg>
           <input
             type="text"
-            placeholder="Buscar epics..."
+            placeholder="Search epics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-56"
@@ -145,7 +145,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics,
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 8h12M9 12h6" />
               </svg>
-              Estados
+              State
               {hiddenCount > 0 && (
                 <span className="bg-purple-600 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
                   {hiddenCount}
@@ -164,14 +164,14 @@ export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics,
                     onClick={selectAllStates}
                     className="text-xs text-gray-500 hover:text-gray-800 underline"
                   >
-                    Seleccionar todos
+                    Select all
                   </button>
                   <span className="text-gray-300">·</span>
                   <button
                     onClick={deselectAllStates}
                     className="text-xs text-gray-500 hover:text-gray-800 underline"
                   >
-                    Deseleccionar todos
+                    Deselect all
                   </button>
                 </div>
 
@@ -202,7 +202,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics,
             onClick={clearFilters}
             className="text-xs text-gray-400 hover:text-gray-600 underline"
           >
-            Limpiar filtros
+            Clear filters
           </button>
         )}
 
@@ -217,7 +217,7 @@ export default function BoardWithSearch({ initialEpics, epicLabels, closedEpics,
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-            Tablero
+            Board
           </button>
           <button
             onClick={() => setView("swimlanes")}

@@ -14,7 +14,7 @@ interface Props {
 
 function formatDate(date: string | null): string | null {
   if (!date) return null;
-  return new Date(date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 // Converts text to React nodes with clickable links (markdown + bare URLs)
@@ -72,7 +72,7 @@ function DescriptionModal({ epic, onClose }: { epic: GitLabEpic; onClose: () => 
               </p>
             ))
           ) : (
-            <p className="text-gray-400 italic">Sin descripción</p>
+            <p className="text-gray-400 italic">No description</p>
           )}
         </div>
 
@@ -84,7 +84,7 @@ function DescriptionModal({ epic, onClose }: { epic: GitLabEpic; onClose: () => 
             rel="noopener noreferrer"
             className="text-xs text-blue-600 hover:underline"
           >
-            Ver en GitLab →
+            View in GitLab →
           </a>
         </div>
       </div>
@@ -109,11 +109,9 @@ export function StaticEpicCard({ epic }: { epic: GitLabEpic }) {
         </a>
         <div className="flex items-center gap-1.5">
           {epic.description && (
-            <button onClick={() => setShowDesc(true)} title="Ver descripción"
-              className="text-blue-400 hover:text-blue-600 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <button onClick={() => setShowDesc(true)} title="View description"
+              className="text-xs font-medium text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded transition-colors leading-none">
+              view
             </button>
           )}
         </div>
@@ -194,12 +192,8 @@ export default function EpicCard({ epic, index, isHidden = false }: Props) {
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowDesc(true); }}
                   onMouseDown={(e) => e.stopPropagation()}
-                  title="Ver descripción"
-                  className="text-blue-400 hover:text-blue-600 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  className="text-xs font-medium text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded transition-colors leading-none">
+                  view
                 </button>
               )}
             </div>

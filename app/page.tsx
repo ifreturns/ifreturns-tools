@@ -14,10 +14,10 @@ async function BoardLoader() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 max-w-md text-center">
-          <p className="text-amber-800 font-medium mb-2">Configuración requerida</p>
+          <p className="text-amber-800 font-medium mb-2">Configuration required</p>
           <p className="text-amber-700 text-sm">
-            Crea un archivo <code className="bg-amber-100 px-1 rounded">.env.local</code> con{" "}
-            <code className="bg-amber-100 px-1 rounded">GITLAB_TOKEN</code> y{" "}
+            Create a <code className="bg-amber-100 px-1 rounded">.env.local</code> file with{" "}
+            <code className="bg-amber-100 px-1 rounded">GITLAB_TOKEN</code> and{" "}
             <code className="bg-amber-100 px-1 rounded">GITLAB_GROUP_ID</code>.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function Home() {
             </svg>
             <div>
               <h1 className="text-lg font-bold text-gray-900 leading-none">GitLab Epic Board</h1>
-              <p className="text-xs text-gray-400 mt-0.5">Tablero Kanban de epics por estado</p>
+              <p className="text-xs text-gray-400 mt-0.5">Kanban board for epics by state</p>
             </div>
           </div>
           <UserButton />

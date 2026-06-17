@@ -75,7 +75,7 @@ export default function Column({ column, dragHandleProps, hiddenEpicIds }: Props
             {provided.placeholder}
             {(column.epics.length === 0 || allHidden) && !snapshot.isDraggingOver && (
               <div className="flex items-center justify-center h-20 text-xs text-gray-300 border-2 border-dashed border-gray-200 rounded-lg">
-                {allHidden ? "Sin resultados" : "Sin epics"}
+                {allHidden ? "No results" : "No epics"}
               </div>
             )}
           </div>

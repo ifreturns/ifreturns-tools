@@ -170,11 +170,11 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
         });
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error ?? "Error al actualizar");
+          throw new Error(data.error ?? "Failed to update");
         }
       } catch (err) {
         setEpics((prev) => prev.map((e) => (e.iid === epicIid ? epic : e)));
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setSaving(null);
       }
@@ -185,7 +185,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
   if (techCols.length === 0 || epicRows.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-sm text-gray-400">
-        Cargando swimlanes...
+        Loading swimlanes...
       </div>
     );
   }
@@ -196,7 +196,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
         {/* Status */}
         <div className="flex items-center gap-3 text-xs text-gray-400 mb-2 px-1 flex-shrink-0">
           <span>{epics.length} epics</span>
-          {saving !== null && <span className="text-blue-500 animate-pulse">Guardando...</span>}
+          {saving !== null && <span className="text-blue-500 animate-pulse">Saving...</span>}
           {error && <span className="text-red-500 bg-red-50 px-2 py-0.5 rounded">Error: {error}</span>}
         </div>
 
@@ -209,14 +209,14 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
                 style={{ width: ROW_HEADER_WIDTH, minWidth: ROW_HEADER_WIDTH }}
                 className="flex-shrink-0 p-3 text-xs font-semibold text-gray-400 uppercase tracking-wider border-r border-gray-200"
               >
-                Estado / Dev
+                State / Dev
               </div>
               <Droppable droppableId="swimlane-columns" direction="horizontal" type="SWIMLANE-COL">
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="flex">
                     {techCols.map((tech, index) => {
                       const count = colWorkload[tech] ?? 0;
-                      const label = tech === UNASSIGNED_TECH ? "Sin asignar" : tech.replace("TECH::", "");
+                      const label = tech === UNASSIGNED_TECH ? "Unassigned" : tech.replace("TECH::", "");
                       const workloadColor =
                         count > 5 ? "text-red-600 bg-red-50" :
                         count > 3 ? "text-amber-600 bg-amber-50" :
@@ -256,7 +256,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
             {/* Swimlane rows */}
             {epicRows.map((rowLabel, rowIdx) => {
               const displayLabel = rowLabel === UNASSIGNED_EPIC
-                ? "Sin estado"
+                ? "No state"
                 : rowLabel.replace("EPIC::", "");
               const rowTotal = techCols.reduce(
                 (n, tech) => n + (cellData.get(`${tech}${CELL_SEP}${rowLabel}`)?.filter(e => !hiddenEpicIds.has(e.iid)).length ?? 0),
@@ -281,7 +281,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
                         onClick={() => moveRow(rowLabel, "up")}
                         disabled={rowIdx === 0}
                         className="p-1 rounded hover:bg-gray-200 disabled:opacity-25 text-gray-500 transition-colors"
-                        title="Mover arriba"
+                        title="Move up"
                       >
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 3a1 1 0 01.707.293l5 5a1 1 0 01-1.414 1.414L10 5.414 5.707 9.707a1 1 0 01-1.414-1.414l5-5A1 1 0 0110 3z"/>
@@ -291,7 +291,7 @@ export default function SwimlaneBoard({ initialEpics, epicLabels, searchQuery, s
                         onClick={() => moveRow(rowLabel, "down")}
                         disabled={rowIdx === epicRows.length - 1}
                         className="p-1 rounded hover:bg-gray-200 disabled:opacity-25 text-gray-500 transition-colors"
-                        title="Mover abajo"
+                        title="Move down"
                       >
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 17a1 1 0 01-.707-.293l-5-5a1 1 0 011.414-1.414L10 14.586l4.293-4.293a1 1 0 011.414 1.414l-5 5A1 1 0 0110 17z"/>
